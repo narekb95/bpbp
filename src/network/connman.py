@@ -2,48 +2,13 @@ from network.server import Server
 from network.client import Client
 import network.networkman as networkman
 
-from selectors import DefaultSelector, EVENT_READ, EVENT_WRITE
 # import hashlib
 import time
 import threading
 import struct
 
-def encode_var_str(s):
-    """Encode a variable length string (var_str)."""
-    length = len(s)
-    return struct.pack(f'<B{length}s', length, s)
-
-
-def create_version_payload():
-    version = 70015
-    services = 0
-    timestamp = int(time.time())
-    addr_recv_services = 0
-    addr_recv_ip = b'\x00' * 16
-    addr_recv_port = 8333
-    addr_trans_services = 0
-    addr_trans_ip = b'\x00' * 16
-    addr_trans_port = 8333
-    nonce = 0
-    user_agent = b'/mybitcoinclient:0.1.0/'
-    user_agent_bytes = encode_var_str(user_agent)
-    start_height = 0
-    relay = 1
-
-    payload = struct.pack(
-        '<iQQ26s26sQ',
-        version,
-        services,
-        timestamp,
-        struct.pack('>Q16sH', addr_recv_services, addr_recv_ip, addr_recv_port),
-        struct.pack('>Q16sH', addr_trans_services, addr_trans_ip, addr_trans_port),
-        nonce,
-    ) + user_agent_bytes + struct.pack('<Ib', start_height, relay)
-    return payload
-
 class Connman:
     def __init__(self, host, port, outbound_ips, max_inbound, client_only = False):
-        self.selector = DefaultSelector()
         if not client_only:
             self.server = Server(host, port, self.inbound_callback, self.accept_inbound_callback)
         self.startOutboundConnections(outbound_ips, port)
