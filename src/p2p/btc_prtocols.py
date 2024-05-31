@@ -1,9 +1,6 @@
 import struct
 import time
-from hashlib import sha256
-
-def sha256d(data):
-    return sha256(sha256(data).digest()).digest()
+from crypto import sha256d
 
 def encode_var_str(s):
     length = len(s)
@@ -57,25 +54,25 @@ def create_ping_msg(peer):
 def create_pong_msg(peer):
     pass
 
-def handle_version_msg(peer, send):
+def handle_version_msg(payload, peer, send):
     peer.version_rec = True
     if peer.verack_rec:
         peer.finished_handshake = True
-    send(create_verack_msg())
+    send(create_verack_msg(peer), peer.socket)
 
 
-def handle_verack_msg(peer, send):
+def handle_verack_msg(payload, peer, send):
     if not peer.finished_handshake:
         return
     peer.verack_rec = True
     if peer.version_rec:
         peer.finished_handshake = True
 
-def handle_ping_msg(peer, send):
+def handle_ping_msg(payload, peer, send):
     if not peer.finished_handshake:
         return
-    send(create_pong_msg())
+    send(create_pong_msg(peer), peer.socket)
 
-def handle_pong_msg(peer, send):
+def handle_pong_msg(payload, peer, send):
     peer.last_pong = time.time()
     peer.round_trip = peer.last_pong - peer.last_ping
