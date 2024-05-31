@@ -2,7 +2,8 @@ from network.server import Server
 from network.client import Client
 import network.networkman as networkman
 
-import hashlib
+from selectors import DefaultSelector, EVENT_READ, EVENT_WRITE
+# import hashlib
 import time
 import threading
 import struct
@@ -41,13 +42,19 @@ def create_version_payload():
     return payload
 
 class Connman:
-    def __init__(self, host, port, ips, max_inbound, client_only = False):
+    def __init__(self, host, port, outbound_ips, max_inbound, client_only = False):
+        self.selector = DefaultSelector()
         if not client_only:
             self.server = Server(host, port, self.inbound_callback, self.accept_inbound_callback)
-        self.outbound = [Client(ip, port, self.outbound_callback) for ip in ips]
+        self.startOutboundConnections(outbound_ips, port)
         self.inbound = []
         self.max_inbound = max_inbound
 
+    def startOutboundConnections(self, ips, port):
+        for ip in ips:
+            client = Client(ip, port, self.outbound_callback)
+            self.outbound.append(client)
+            
     def outbound_callback(self, socket):
         print(socket)
         try:
