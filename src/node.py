@@ -1,3 +1,5 @@
+from database.db_man import SQLITE_DB
+
 import p2p.btc_prtocols as protocols
 from p2p.peer import Peer
 from network.connman import Connman
@@ -5,13 +7,17 @@ from network.connman import Connman
 import json
 from sys import argv
 
+
+def load_json(file):
+    f = open(file, 'r') if file else None
+    return json.load(f) if f else {}
+
 def get_option(option):
     op = next((arg for arg in argv if arg.startswith(f'--{option}=')), None)
     return op.split('=')[1] if op else None
 
 def load_options(file):
-    f = open(file, 'r') if file else None
-    ops = json.load(f) if f else {}
+    ops = load_json(file)
 
     host = get_option('host') or ops['DEFAULT_HOST']
     port = int(get_option('port') or ops['DEFAULT_PORT'])
@@ -36,12 +42,19 @@ def load_options(file):
     return [outbound_ips, max_inbound, host, port]
 
 class Node:
-    def __init__(self, file = None):
+    def __init__(self, param_file = None, db_file = None):
+
+        if not param_file:
+            raise ValueError("No parameters file specified")
+        if not db_file:
+            raise ValueError("No database file specified")
+
+        db_data = load_json(db_file)
+        self.db = SQLITE_DB(db_data)
 
         self.peers = []
-        
-        [self.outbound_ips, self.max_inbound, self.host, self.port] = load_options(file)
 
+        [self.outbound_ips, self.max_inbound, self.host, self.port] = load_options(param_file)
         self.connman = Connman(
             self.host,
             self.port,
@@ -50,6 +63,8 @@ class Node:
             self.on_connect,
             self.handle_command)
         
+        
+
     
     def handle_command(self, command, payload, socket, send):
         peer = next(peer for peer in self.peers if peer.socket == socket)
@@ -62,8 +77,11 @@ class Node:
 
     def on_connect(self, socket, ip, send):
         self.peers.append(Peer(socket, ip))
+        print('sending version message')
         send(protocols.create_version_msg(self.peers[-1]), self.peers[-1].socket)
 
 
 if __name__ == "__main__":
-    node = Node(argv[1] if len(argv) > 1 else None)
+    parameters_path = argv[1] if len(argv) > 1 else None
+    db_path = argv[2] if len(argv) > 2 else None
+    node = Node(parameters_path, db_path)

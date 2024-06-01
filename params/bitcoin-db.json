@@ -1,0 +1,47 @@
+{
+    "name": "bitcoin",
+    "db": "sqlite",
+    "tables": [
+        {
+            "name": "headers",
+            "keys": [
+                {
+                    "name": "id",
+                    "type": "INTEGER PRIMARY KEY"
+                },
+                {
+                    "name": "height",
+                    "type": "INTEGER NOT NULL"
+                },
+                {
+                    "name": "hash",
+                    "type": "text NOT NULL"
+                },
+                {
+                    "name": "prev_hash",
+                    "type": "text NOT NULL"
+                },
+                {
+                    "name": "prev_id",
+                    "type": "INTEGER"
+                },
+                {
+                    "name": "merkle_root",
+                    "type": "text NOT NULL"
+                },
+                {
+                    "name": "timestamp",
+                    "type": "INTEGER NOT NULL"
+                },
+                {
+                    "name": "bits_difficulty",
+                    "type": "INTEGER NOT NULL"
+                },
+                {
+                    "name": "nonce",
+                    "type": "INTEGER NOT NULL"
+                }
+            ]
+        }
+    ]
+}

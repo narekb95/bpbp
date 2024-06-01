@@ -2,5 +2,6 @@
     "DEFAULT_PORT" : "8333",
     "DEFAULT_HOST" : "0.0.0.0",
     "MAX_INBOUND" : "10",
-    "PEERS_FILE": "ips.text"
+    "PEERS_FILE": "ips.text",
+    "GENESIS_BLOCK": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
 }
