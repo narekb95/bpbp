@@ -5,11 +5,27 @@ from network.parameters import DEFAULT_HOST, DEFAULT_PORT, MAX_INBOUND
 
 from sys import argv
 
+def get_option(option):
+    op = next((arg for arg in argv if arg.startswith(f'--{option}=')), None)
+    return op.split('=')[1] if op else None
+
 def load_options(file):
-    outbound_ips = ['88.99.136.167']
-    max_inbound = 10
-    host = DEFAULT_HOST
-    port = DEFAULT_PORT
+    host = get_option('host') or DEFAULT_HOST
+    port = int(get_option('port') or DEFAULT_PORT)
+    max_inbound = int(get_option('max_inbound') or MAX_INBOUND)
+    # outbound_ips = ['88.99.136.167']
+
+    # if port is not specified in the outbound_ips, use the default port
+    def get_ip_as_obj(ip):
+        ip_list = ip.split(':')
+        if(len(ip_list) == 1):
+            ip_list.append(port)
+        else:
+            ip_list[1] = int(ip_list[1])
+        return (ip_list[0], ip_list[1])
+    
+    outbound_ips = (get_option('outbound_ips') or '').split(',')
+    outbound_ips = map(get_ip_as_obj, outbound_ips)
     return [outbound_ips, max_inbound, host, port]
 
 class Node:
