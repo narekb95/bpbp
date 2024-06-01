@@ -3,6 +3,7 @@ from p2p.peer import Peer
 from network.connman import Connman
 from network.parameters import DEFAULT_HOST, DEFAULT_PORT, MAX_INBOUND
 
+import json
 from sys import argv
 
 def get_option(option):
@@ -10,12 +11,14 @@ def get_option(option):
     return op.split('=')[1] if op else None
 
 def load_options(file):
-    host = get_option('host') or DEFAULT_HOST
-    port = int(get_option('port') or DEFAULT_PORT)
-    max_inbound = int(get_option('max_inbound') or MAX_INBOUND)
-    # outbound_ips = ['88.99.136.167']
+    f = open(file, 'r') if file else None
+    ops = json.load(f) if f else {}
 
-    # if port is not specified in the outbound_ips, use the default port
+    host = get_option('host') or ops['DEFAULT_HOST']
+    port = int(get_option('port') or ops['DEFAULT_PORT'])
+    max_inbound = int(get_option('max_inbound') or ops['MAX_INBOUND'])
+
+    # If port is not specified in the outbound_ips, use the default port
     def get_ip_as_obj(ip):
         ip_list = ip.split(':')
         if(len(ip_list) == 1):
