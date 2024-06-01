@@ -1,7 +1,6 @@
 import p2p.btc_prtocols as protocols
 from p2p.peer import Peer
 from network.connman import Connman
-from network.parameters import DEFAULT_HOST, DEFAULT_PORT, MAX_INBOUND
 
 import json
 from sys import argv
@@ -27,8 +26,13 @@ def load_options(file):
             ip_list[1] = int(ip_list[1])
         return (ip_list[0], ip_list[1])
     
-    outbound_ips = (get_option('outbound_ips') or '').split(',')
-    outbound_ips = map(get_ip_as_obj, outbound_ips)
+    outbound_ips = get_option('outbound_ips')
+    if outbound_ips:
+        outbound_ips = (get_option('outbound_ips') or '').split(',')
+        outbound_ips = map(get_ip_as_obj, outbound_ips)
+    else:
+        outbound_ips = []
+    print(outbound_ips)
     return [outbound_ips, max_inbound, host, port]
 
 class Node:
