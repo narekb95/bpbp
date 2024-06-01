@@ -38,7 +38,6 @@ def load_options(file):
         outbound_ips = map(get_ip_as_obj, outbound_ips)
     else:
         outbound_ips = []
-    print(outbound_ips)
     return [outbound_ips, max_inbound, host, port]
 
 class Node:

@@ -31,8 +31,15 @@ class Connman:
                     callback = key.data
                     try:
                         callback(key.fileobj)
+                    except ValueError as e:
+                        print(f"Caught value error: {e}")
+                        if e.args[0] == "Invalid magic bytes":
+                            self.selector.unregister(key.fileobj)
+                            key.fileobj.close()
                     except Exception as e:
                         print(f"Caught exception: {e}")
+                        raise e
+                        
 
         except KeyboardInterrupt:
             print("Caught keyboard interrupt, exiting")
@@ -86,7 +93,7 @@ class Connman:
         self.sockets.append(peer_socket)
 
         self.selector.register(peer_socket, selectors.EVENT_READ, self.recv_message)
-        print(f"Connected to server at {self.host}:{self.port}")
+        print(f"Connected to server at {host}")
         self.on_connect(peer_socket, host, self.send_message)
 
     # def accept_inbound_callback(self):

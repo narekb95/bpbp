@@ -56,7 +56,7 @@ def version_payload():
     ) + user_agent_bytes + struct.pack('<Ib', start_height, relay)
     return payload
 
-def getheaders_payload(block_locator_hashes, hash_stop):
+def getheaders_payload(block_locator_hashes=[], hash_stop= b'\x00' * 32):
     version = 70015
     payload = struct.pack('<i', version)  # version
     payload += encode_var_int(len(block_locator_hashes))  # hash count
@@ -89,8 +89,8 @@ def create_version_msg(peer):
     payload = version_payload()
     return create_msg(b'version', payload, peer)
 
-def create_getheaders_msg(peer, current_hash):
-    return create_msg(b'getheaders', getheaders_payload(current_hash), peer)
+def create_getheaders_msg(peer, block_locator_hashes=[], hash_stop= b'\x00' * 32):
+    return create_msg(b'getheaders', getheaders_payload(block_locator_hashes, hash_stop), peer)
 
 def create_verack_msg(peer):
     return create_msg(b'verack', b'', peer)
@@ -103,7 +103,7 @@ def create_pong_msg(peer):
     pass
 
 def post_handshake(peer, send):
-    headers = create_getheaders_msg(peer, b'\x00' * 32)
+    headers = create_getheaders_msg(peer)
     print('sneding getheaders request')
     send(headers, peer.socket)
 
@@ -115,16 +115,17 @@ def handle_version_msg(payload, peer, send):
         post_handshake(peer, send)
 
 def handle_verack_msg(payload, peer, send):
-    if not peer.finished_handshake:
-        return
     peer.verack_rec = True
     if peer.version_rec:
         peer.finished_handshake = True
         post_handshake(peer, send)
 
+# [TODO]
 def handle_ping_msg(payload, peer, send):
+    return
     if not peer.finished_handshake:
         return
+    print('sending pong')
     send(create_pong_msg(peer), peer.socket)
 
 def handle_pong_msg(payload, peer, send):
