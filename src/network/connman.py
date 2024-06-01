@@ -2,7 +2,6 @@ from network.server import Server
 from crypto import sha256d
 
 # import hashlib
-import time
 import threading
 import struct
 import socket
