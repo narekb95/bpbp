@@ -45,9 +45,9 @@ class Node:
     def __init__(self, param_file = None, db_file = None):
 
         if not param_file:
-            raise ValueError("No parameters file specified")
+            raise NameError("No parameters file specified")
         if not db_file:
-            raise ValueError("No database file specified")
+            raise NameError("No database file specified")
 
         db_data = load_json(db_file)
         self.db = SQLITE_DB(db_data)

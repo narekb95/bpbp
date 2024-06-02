@@ -96,7 +96,6 @@ def create_getheaders_msg(peer, block_locator_hashes=[], hash_stop= b'\x00' * 32
 
 def create_verack_msg(peer):
     return create_msg(b'verack', b'', peer)
-    pass
 
 def get_random_nonce():
     rand = Rand()
@@ -119,6 +118,7 @@ def post_handshake(peer, send):
 
 def handle_version_msg(payload, peer, send):
     peer.version_rec = True
+    print_colored_title('Sending verack message', 'green')
     send(create_verack_msg(peer), peer.socket)
     if peer.verack_rec:
         peer.finished_handshake = True
