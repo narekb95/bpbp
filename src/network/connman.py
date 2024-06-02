@@ -17,6 +17,7 @@ class Connman:
         self.run_server()
         
         for host in outbound_ips:
+            print('outbound', host)
             self.connect_to_ip(host)
 
         try:
@@ -24,17 +25,7 @@ class Connman:
                 events = self.selector.select(timeout=None)
                 for key, _ in events:
                     callback = key.data
-                    try:
-                        callback(key.fileobj)
-                    except ValueError as e:
-                        print(f"Caught value error: {e}")
-                        if e.args[0] == "Invalid magic bytes":
-                            self.selector.unregister(key.fileobj)
-                            key.fileobj.close()
-                    except Exception as e:
-                        print(f"Caught exception: {e}")
-                        raise e
-                        
+                    callback(key.fileobj)
 
         except KeyboardInterrupt:
             print("Caught keyboard interrupt, exiting")

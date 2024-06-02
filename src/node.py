@@ -32,9 +32,9 @@ def load_options(file):
             ip_list[1] = int(ip_list[1])
         return (ip_list[0], ip_list[1])
     
-    outbound_ips = get_option('outbound_ips')
+    outbound_ips = get_option('outbound-ips')
     if outbound_ips:
-        outbound_ips = (get_option('outbound_ips') or '').split(',')
+        outbound_ips = outbound_ips.split(',')
         outbound_ips = map(get_ip_as_obj, outbound_ips)
     else:
         outbound_ips = []
@@ -53,12 +53,12 @@ class Node:
 
         self.peers = []
 
-        [self.outbound_ips, self.max_inbound, self.host, self.port] = load_options(param_file)
+        [outbound_ips, max_inbound, host, port] = load_options(param_file)
         self.connman = Connman(
-            self.host,
-            self.port,
-            self.outbound_ips,
-            self.max_inbound,
+            host,
+            port,
+            outbound_ips,
+            max_inbound,
             self.on_connect,
             self.handle_command)
         

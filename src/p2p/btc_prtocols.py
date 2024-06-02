@@ -179,7 +179,6 @@ def handle_headers_message(payload, peer, send):
 
 def handle_single_command(command, peer, send):
     command, payload = command
-    print(command, payload)
     call = f'handle_{command}_msg'
     if call in globals():
         globals()[call](payload, peer, send)
@@ -197,12 +196,10 @@ def parse_single_command(data):
     checksum = data[20:24]
     msg_length = HEADER_LENGTH + payload_length
     if len(data) < msg_length:
-        print("Short data packet found!")
         return None, data
     
     payload = data[HEADER_LENGTH:msg_length]
     if sha256d(payload)[:4] != checksum:
-        print(sha256d(payload)[:4], checksum)
         raise ValueError("Invalid checksum")
     command = command.decode('ascii')
     print(f'received {command} message')
