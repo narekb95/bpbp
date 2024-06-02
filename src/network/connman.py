@@ -17,7 +17,6 @@ class Connman:
         self.run_server()
         
         for host in outbound_ips:
-            print('outbound', host)
             self.connect_to_ip(host)
 
         try:
@@ -65,7 +64,6 @@ class Connman:
 
     def connect_to_ip(self, host):
         peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    
-        print(host)
         peer_socket.connect((host))
         peer_socket.setblocking(False)
         self.sockets.append(peer_socket)

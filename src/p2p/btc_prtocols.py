@@ -1,7 +1,8 @@
+from colors import print_colored_title
 import struct
 import time
 from crypto import sha256d
-
+from random import SystemRandom as Rand
 HEADER_LENGTH = 24
 
 # CompactSize Unsigned Integer
@@ -97,15 +98,23 @@ def create_verack_msg(peer):
     return create_msg(b'verack', b'', peer)
     pass
 
-def create_ping_msg(peer):
-    pass
+def get_random_nonce():
+    rand = Rand()
+    nonce = rand.randbytes(8)
+    return nonce
+    
 
-def create_pong_msg(peer):
-    pass
+def create_ping_msg(peer):
+    payload = get_random_nonce()
+    return create_msg(b'ping', payload, peer)
+
+def create_pong_msg(peer, nonce):
+    payload = nonce
+    return create_msg(b'pong', payload, peer)
 
 def post_handshake(peer, send):
     headers = create_getheaders_msg(peer)
-    print('sneding getheaders request')
+    print_colored_title('Sending getheaders request', 'green')
     send(headers, peer.socket)
 
 def handle_version_msg(payload, peer, send):
@@ -123,11 +132,10 @@ def handle_verack_msg(payload, peer, send):
 
 # [TODO]
 def handle_ping_msg(payload, peer, send):
-    return
     if not peer.finished_handshake:
         return
-    print('sending pong')
-    send(create_pong_msg(peer), peer.socket)
+    print_colored_title(f'Sending pong with nonce {payload}.', 'green')
+    send(create_pong_msg(peer, payload), peer.socket)
 
 def handle_pong_msg(payload, peer, send):
     peer.last_pong = time.time()
@@ -184,7 +192,7 @@ def handle_single_command(command, peer, send):
         globals()[call](payload, peer, send)
     else:
         raise ValueError(f'No handler exists for {command} command.')
-        print(f'No handler for {command} command.')
+        
 def parse_single_command(data):
     if len(data)< HEADER_LENGTH:
         return None, data

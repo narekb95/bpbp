@@ -1,3 +1,4 @@
+from colors import print_colored_title
 from database.db_man import SQLITE_DB
 
 import p2p.btc_prtocols as protocols
@@ -79,7 +80,7 @@ class Node:
                 # TODO send reject
     def on_connect(self, socket, ip, send):
         self.peers.append(Peer(socket, ip))
-        print('sending version message')
+        print_colored_title('sending version message', 'green')
         send(protocols.create_version_msg(self.peers[-1]), self.peers[-1].socket)
 
 
