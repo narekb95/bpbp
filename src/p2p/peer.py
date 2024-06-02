@@ -8,3 +8,4 @@ class Peer:
         self.last_ping = None
         self.last_pong = None
         self.round_trip = None
+        self.raw_data = b''

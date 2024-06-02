@@ -2,6 +2,7 @@ import struct
 import time
 from crypto import sha256d
 
+HEADER_LENGTH = 24
 
 # CompactSize Unsigned Integer
 def encode_var_int(value):
@@ -176,3 +177,33 @@ def handle_headers_message(payload, peer, send):
     print(len(headers))
     return headers
 
+def handle_single_command(command, peer, send):
+    command, payload = command
+    print(command, payload)
+    call = f'handle_{command}_msg'
+    if call in globals():
+        globals()[call](payload, peer, send)
+    else:
+        raise ValueError(f'No handler exists for {command} command.')
+        print(f'No handler for {command} command.')
+def parse_single_command(data):
+    if len(data)< HEADER_LENGTH:
+        return None, data
+    magic = data[:4]
+    if magic != b'\xf9\xbe\xb4\xd9':
+        raise ValueError("Invalid magic bytes")
+    command = data[4:16].strip(b'\x00')
+    payload_length = struct.unpack('<I', data[16:20])[0]
+    checksum = data[20:24]
+    msg_length = HEADER_LENGTH + payload_length
+    if len(data) < msg_length:
+        print("Short data packet found!")
+        return None, data
+    
+    payload = data[HEADER_LENGTH:msg_length]
+    if sha256d(payload)[:4] != checksum:
+        print(sha256d(payload)[:4], checksum)
+        raise ValueError("Invalid checksum")
+    command = command.decode('ascii')
+    print(f'received {command} message')
+    return (command, payload), data[msg_length:]

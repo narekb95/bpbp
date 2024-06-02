@@ -1,9 +1,4 @@
-from network.server import Server
-from crypto import sha256d
-
-# import hashlib
 import threading
-import struct
 import socket
 import selectors
 
@@ -59,6 +54,7 @@ class Connman:
         self.server_socket.listen(10)
         self.server_socket.setblocking(False)
         self.selector.register(self.server_socket, selectors.EVENT_READ, self.accept_conn)
+        print(f'Listening on port {self.port}')
 
     def accept_conn(self, server_socket):
         assert(server_socket == self.server_socket)
@@ -71,18 +67,9 @@ class Connman:
 
 
     def recv_message(self, sock):
-        magic = sock.recv(4)
-        if magic != b'\xf9\xbe\xb4\xd9':
-            raise ValueError("Invalid magic bytes")
-        command = sock.recv(12).strip(b'\x00')
-        length = struct.unpack('<I', sock.recv(4))[0]
-        checksum = sock.recv(4)
-        payload = sock.recv(length)
-        if sha256d(payload)[:4] != checksum:
-            raise ValueError("Invalid checksum")
-        command = command.decode('ascii')
-        print(f'received {command} message')
-        self.handle_command(command, payload, sock, self.send_message)
+        output = b''
+        output = sock.recv(1024)
+        self.handle_command(output, sock, self.send_message)
 
 
     def connect_to_ip(self, host):

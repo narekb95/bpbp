@@ -23,7 +23,7 @@ def load_options(file):
     port = int(get_option('port') or ops['DEFAULT_PORT'])
     max_inbound = int(get_option('max_inbound') or ops['MAX_INBOUND'])
 
-    # If port is not specified in the outbound_ips, use the default port
+    # If port is not specified in the outbound-ips, use the default port
     def get_ip_as_obj(ip):
         ip_list = ip.split(':')
         if(len(ip_list) == 1):
@@ -65,15 +65,18 @@ class Node:
         
 
     
-    def handle_command(self, command, payload, socket, send):
+    def handle_command(self, input, socket, send):
         peer = next(peer for peer in self.peers if peer.socket == socket)
-        handler_name = 'handle_' + command + '_msg'
-        if hasattr(protocols, handler_name):
-            handler =  getattr(protocols, handler_name)
-        else:
-            raise ValueError(f"Unknown command {command}")
-        handler(payload, peer, send)
-
+        peer.raw_data += input
+        while True:
+            command, peer.raw_data = protocols.parse_single_command(peer.raw_data)
+            if not command:
+                break
+            try:
+                protocols.handle_single_command(command, peer, send)
+            except ValueError as e:
+                print(e)
+                # TODO send reject
     def on_connect(self, socket, ip, send):
         self.peers.append(Peer(socket, ip))
         print('sending version message')
