@@ -58,13 +58,14 @@ def version_payload():
     ) + user_agent_bytes + struct.pack('<Ib', start_height, relay)
     return payload
 
-def getheaders_payload(block_locator_hashes=[], hash_stop= b'\x00' * 32):
+def getheaders_payload(block_locator_hashes, hash_stop):
+    print(block_locator_hashes, hash_stop)
     version = 70015
     payload = struct.pack('<i', version)  # version
     payload += encode_var_int(len(block_locator_hashes))  # hash count
     for hash in block_locator_hashes:
-        payload += hash[::-1]  # block locator hashes (reversed)
-    payload += hash_stop[::-1]  # hash_stop (reversed)
+        payload += hash  # block locator hashes (reversed)
+    payload += hash_stop  # hash_stop (reversed)
     return payload
 
 
@@ -79,7 +80,7 @@ def inv_payload(inventory):
     
 
 
-def create_msg(command, payload, peer):
+def create_msg(command, payload):
     magic = b'\xf9\xbe\xb4\xd9'  # Mainnet magic bytes
     command = command.ljust(12, b'\x00')
     length = struct.pack('<I', len(payload))
@@ -87,15 +88,15 @@ def create_msg(command, payload, peer):
     message = magic + command + length + checksum + payload
     return message
 
-def create_version_msg(peer):
+def create_version_msg():
     payload = version_payload()
-    return create_msg(b'version', payload, peer)
+    return create_msg(b'version', payload)
 
-def create_getheaders_msg(peer, block_locator_hashes=[], hash_stop= b'\x00' * 32):
-    return create_msg(b'getheaders', getheaders_payload(block_locator_hashes, hash_stop), peer)
+def create_getheaders_msg(block_locator_hashes, hash_stop):
+    return create_msg(b'getheaders', getheaders_payload(block_locator_hashes, hash_stop))
 
-def create_verack_msg(peer):
-    return create_msg(b'verack', b'', peer)
+def create_verack_msg():
+    return create_msg(b'verack', b'')
 
 def get_random_nonce():
     rand = Rand()
@@ -103,39 +104,32 @@ def get_random_nonce():
     return nonce
     
 
-def create_ping_msg(peer):
+def create_ping_msg():
     payload = get_random_nonce()
-    return create_msg(b'ping', payload, peer)
+    return create_msg(b'ping', payload)
 
-def create_pong_msg(peer, nonce):
+def create_pong_msg(nonce):
     payload = nonce
-    return create_msg(b'pong', payload, peer)
+    return create_msg(b'pong', payload)
 
-def post_handshake(peer, send):
-    headers = create_getheaders_msg(peer)
-    print_colored_title('Sending getheaders request', 'green')
-    send(headers, peer.socket)
 
 def handle_version_msg(payload, peer, send):
     peer.version_rec = True
     print_colored_title('Sending verack message', 'green')
-    send(create_verack_msg(peer), peer.socket)
+    send(create_verack_msg(), peer.socket)
     if peer.verack_rec:
         peer.finished_handshake = True
-        post_handshake(peer, send)
 
 def handle_verack_msg(payload, peer, send):
     peer.verack_rec = True
     if peer.version_rec:
         peer.finished_handshake = True
-        post_handshake(peer, send)
 
-# [TODO]
 def handle_ping_msg(payload, peer, send):
     if not peer.finished_handshake:
         return
     print_colored_title(f'Sending pong with nonce {payload}.', 'green')
-    send(create_pong_msg(peer, payload), peer.socket)
+    send(create_pong_msg(payload), peer.socket)
 
 def handle_pong_msg(payload, peer, send):
     peer.last_pong = time.time()
@@ -180,7 +174,8 @@ def decode_headers_msg(payload):
     return headers
 
 
-def handle_headers_message(payload, peer, send):
+def handle_headers_msg(payload, peer, send):
+    print_colored_title('Received headers message', 'red')
     headers = decode_headers_msg(payload)
     print(len(headers))
     return headers

@@ -1,5 +1,6 @@
+from threading import Thread
 from colors import print_colored_title
-from database.db_man import SQLITE_DB
+from database.orm import DB
 
 import p2p.btc_prtocols as protocols
 from p2p.peer import Peer
@@ -7,7 +8,7 @@ from network.connman import Connman
 
 import json
 from sys import argv
-
+from crypto import parse_hash
 
 def load_json(file):
     f = open(file, 'r') if file else None
@@ -50,8 +51,12 @@ class Node:
             raise NameError("No database file specified")
 
         db_data = load_json(db_file)
-        self.db = SQLITE_DB(db_data)
+        self.db = DB(db_data)
+        
+        self.headers = self.db.fetch_all_headers()
+        self.header_hashes = [parse_hash(header['hash']) for header in self.headers]
 
+        self.getHeaderMsg = protocols.create_getheaders_msg(self.header_hashes, self.header_hashes[0])
         self.peers = []
 
         [outbound_ips, max_inbound, host, port] = load_options(param_file)
@@ -63,8 +68,17 @@ class Node:
             self.on_connect,
             self.handle_command)
         
-        
+        self.connman_thread = Thread(target=self.connman.run)
 
+
+        self.connman_thread.start()
+        while True:
+            for peer in self.peers:
+                if peer.finished_handshake and not peer.awaiting_blocks:
+                    print_colored_title('Sending getheaders message.', 'green')
+                    self.connman.send_message(self.getHeaderMsg, peer.socket)
+                    peer.awaiting_blocks = True
+        
     
     def handle_command(self, input, socket, send):
         peer = next(peer for peer in self.peers if peer.socket == socket)
@@ -81,7 +95,7 @@ class Node:
     def on_connect(self, socket, ip, send):
         self.peers.append(Peer(socket, ip))
         print_colored_title('sending version message', 'green')
-        send(protocols.create_version_msg(self.peers[-1]), self.peers[-1].socket)
+        send(protocols.create_version_msg(), self.peers[-1].socket)
 
 
 if __name__ == "__main__":

@@ -10,13 +10,15 @@ class Connman:
         self.max_inbound = max_inbound
         self.on_connect = on_connect
         self.handle_command = handle_command
+        self.outbound_ips = outbound_ips
 
         self.sockets = []
         self.selector = selectors.DefaultSelector()
 
+    def run(self):
         self.run_server()
         
-        for host in outbound_ips:
+        for host in self.outbound_ips:
             self.connect_to_ip(host)
 
         try:

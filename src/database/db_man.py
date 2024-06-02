@@ -13,6 +13,7 @@ class SQLITE_DB(DBMan):
     def __init__(self, db_data):
         name = db_data['name']
         self.conn = sqlite3.connect(f'{name}.db')
+        self.conn.row_factory= sqlite3.Row
         self.cur = self.conn.cursor()
         if self.is_database_empty():
             tables, initial_data = db_data['tables'], db_data['initial-data']
@@ -49,6 +50,8 @@ class SQLITE_DB(DBMan):
     def find(self, table, data):
         keys = ', '.join(data.keys())
         values = ', '.join(data.values())
-        self.cur.execute(f'SELECT * FROM {table} WHERE {keys}={values}')
+        filter = f'where ({keys}) = ({values})' if len(data.keys()) > 0 else ''
+        command = f'SELECT * FROM {table} {filter};'
+        self.cur.execute(command)
         return self.cur.fetchall()
     
