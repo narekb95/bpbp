@@ -3,8 +3,6 @@
 - Default parameters can be read as options in a json file.
 - Optionally, one can override parameters using commandline options.
 - This can be done with syntex: `--[param]=[value]`.
-Or
-outbound_ips
 
 | CMD Parameter  | JSON Option | Description |
 | ------------- | ------------- | ------------- |

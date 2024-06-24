@@ -1,9 +1,4 @@
-from network.server import Server
-from crypto import sha256d
-
-# import hashlib
 import threading
-import struct
 import socket
 import selectors
 
@@ -15,13 +10,15 @@ class Connman:
         self.max_inbound = max_inbound
         self.on_connect = on_connect
         self.handle_command = handle_command
+        self.outbound_ips = outbound_ips
 
         self.sockets = []
         self.selector = selectors.DefaultSelector()
 
+    def run(self):
         self.run_server()
         
-        for host in outbound_ips:
+        for host in self.outbound_ips:
             self.connect_to_ip(host)
 
         try:
@@ -29,17 +26,7 @@ class Connman:
                 events = self.selector.select(timeout=None)
                 for key, _ in events:
                     callback = key.data
-                    try:
-                        callback(key.fileobj)
-                    except ValueError as e:
-                        print(f"Caught value error: {e}")
-                        if e.args[0] == "Invalid magic bytes":
-                            self.selector.unregister(key.fileobj)
-                            key.fileobj.close()
-                    except Exception as e:
-                        print(f"Caught exception: {e}")
-                        raise e
-                        
+                    callback(key.fileobj)
 
         except KeyboardInterrupt:
             print("Caught keyboard interrupt, exiting")
@@ -59,6 +46,7 @@ class Connman:
         self.server_socket.listen(10)
         self.server_socket.setblocking(False)
         self.selector.register(self.server_socket, selectors.EVENT_READ, self.accept_conn)
+        print(f'Listening on port {self.port}')
 
     def accept_conn(self, server_socket):
         assert(server_socket == self.server_socket)
@@ -71,23 +59,13 @@ class Connman:
 
 
     def recv_message(self, sock):
-        magic = sock.recv(4)
-        if magic != b'\xf9\xbe\xb4\xd9':
-            raise ValueError("Invalid magic bytes")
-        command = sock.recv(12).strip(b'\x00')
-        length = struct.unpack('<I', sock.recv(4))[0]
-        checksum = sock.recv(4)
-        payload = sock.recv(length)
-        if sha256d(payload)[:4] != checksum:
-            raise ValueError("Invalid checksum")
-        command = command.decode('ascii')
-        print(f'received {command} message')
-        self.handle_command(command, payload, sock, self.send_message)
+        output = b''
+        output = sock.recv(1024)
+        self.handle_command(output, sock, self.send_message)
 
 
     def connect_to_ip(self, host):
         peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    
-        print(host)
         peer_socket.connect((host))
         peer_socket.setblocking(False)
         self.sockets.append(peer_socket)

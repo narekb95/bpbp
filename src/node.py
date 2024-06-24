@@ -1,4 +1,6 @@
-from database.db_man import SQLITE_DB
+from threading import Thread
+from colors import print_colored_title
+from database.orm import DB
 
 import p2p.btc_prtocols as protocols
 from p2p.peer import Peer
@@ -6,7 +8,7 @@ from network.connman import Connman
 
 import json
 from sys import argv
-
+from crypto import parse_hash
 
 def load_json(file):
     f = open(file, 'r') if file else None
@@ -23,7 +25,7 @@ def load_options(file):
     port = int(get_option('port') or ops['DEFAULT_PORT'])
     max_inbound = int(get_option('max_inbound') or ops['MAX_INBOUND'])
 
-    # If port is not specified in the outbound_ips, use the default port
+    # If port is not specified in the outbound-ips, use the default port
     def get_ip_as_obj(ip):
         ip_list = ip.split(':')
         if(len(ip_list) == 1):
@@ -32,9 +34,9 @@ def load_options(file):
             ip_list[1] = int(ip_list[1])
         return (ip_list[0], ip_list[1])
     
-    outbound_ips = get_option('outbound_ips')
+    outbound_ips = get_option('outbound-ips')
     if outbound_ips:
-        outbound_ips = (get_option('outbound_ips') or '').split(',')
+        outbound_ips = outbound_ips.split(',')
         outbound_ips = map(get_ip_as_obj, outbound_ips)
     else:
         outbound_ips = []
@@ -44,40 +46,56 @@ class Node:
     def __init__(self, param_file = None, db_file = None):
 
         if not param_file:
-            raise ValueError("No parameters file specified")
+            raise NameError("No parameters file specified")
         if not db_file:
-            raise ValueError("No database file specified")
+            raise NameError("No database file specified")
 
         db_data = load_json(db_file)
-        self.db = SQLITE_DB(db_data)
+        self.db = DB(db_data)
+        
+        self.headers = self.db.fetch_all_headers()
+        self.header_hashes = [parse_hash(header['hash']) for header in self.headers]
 
+        self.getHeaderMsg = protocols.create_getheaders_msg(self.header_hashes, self.header_hashes[0])
         self.peers = []
 
-        [self.outbound_ips, self.max_inbound, self.host, self.port] = load_options(param_file)
+        [outbound_ips, max_inbound, host, port] = load_options(param_file)
         self.connman = Connman(
-            self.host,
-            self.port,
-            self.outbound_ips,
-            self.max_inbound,
+            host,
+            port,
+            outbound_ips,
+            max_inbound,
             self.on_connect,
             self.handle_command)
         
+        self.connman_thread = Thread(target=self.connman.run)
+
+
+        self.connman_thread.start()
+        while True:
+            for peer in self.peers:
+                if peer.finished_handshake and not peer.awaiting_blocks:
+                    print_colored_title('Sending getheaders message.', 'green')
+                    self.connman.send_message(self.getHeaderMsg, peer.socket)
+                    peer.awaiting_blocks = True
         
-
     
-    def handle_command(self, command, payload, socket, send):
+    def handle_command(self, input, socket, send):
         peer = next(peer for peer in self.peers if peer.socket == socket)
-        handler_name = 'handle_' + command + '_msg'
-        if hasattr(protocols, handler_name):
-            handler =  getattr(protocols, handler_name)
-        else:
-            raise ValueError(f"Unknown command {command}")
-        handler(payload, peer, send)
-
+        peer.raw_data += input
+        while True:
+            command, peer.raw_data = protocols.parse_single_command(peer.raw_data)
+            if not command:
+                break
+            try:
+                protocols.handle_single_command(command, peer, send)
+            except ValueError as e:
+                print(e)
+                # TODO send reject
     def on_connect(self, socket, ip, send):
         self.peers.append(Peer(socket, ip))
-        print('sending version message')
-        send(protocols.create_version_msg(self.peers[-1]), self.peers[-1].socket)
+        print_colored_title('sending version message', 'green')
+        send(protocols.create_version_msg(), self.peers[-1].socket)
 
 
 if __name__ == "__main__":
