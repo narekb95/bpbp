@@ -10,8 +10,8 @@ outbound_ips
 | ------------- | ------------- | ------------- |
 | host  | DEFAULT_PORT | [Is this needed?] |
 | port  | DEFAULT_HOST | Port to listen to |
-| max_inbound  | MAX_INBOUND | Content Cell  |
-| outbound_ips  | [see outbound section]  | Content Cell  |
+| max_inbound  | MAX_INBOUND | Maximum number of inbound peers  |
+| outbound_ips  | [see outbound section]  | Outbound peers to connect to  |
 
 ## Testing
 
