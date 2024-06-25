@@ -3,6 +3,7 @@ import struct
 import time
 from crypto import sha256d
 from random import SystemRandom as Rand
+from models.Header import Header
 HEADER_LENGTH = 24
 
 # CompactSize Unsigned Integer
@@ -154,16 +155,7 @@ def check_header_meets_target(header, nbits):
 
 def decode_block_header(data):
     [version, previous_block_hash, merkle_root, timestamp, bits, nonce] = struct.unpack('<I32s32sIII', data[:80])
-    header = {
-        'version': version,
-        'previous_block_hash': previous_block_hash.hex(),
-        'merkle_root': merkle_root.hex(),
-        'timestamp': timestamp,
-        'nbits': bits,
-        'nonce': nonce,
-        'block_hash': sha256d(data[:80:-1]).hex()
-    }
-    print_colored_title('header:', 'yellow', header)
+    header = Header(version, previous_block_hash.hex(), merkle_root.hex(),timestamp, bits, nonce, sha256d(data[:80:-1]).hex())
     return header, data[81:]
     
 def decode_headers_msg(payload):
@@ -173,14 +165,17 @@ def decode_headers_msg(payload):
     for _ in range(count):
         header, payload = decode_block_header(payload)
         headers.append(header)
+        if len(headers) == 1:
+            print_colored_title('First header:', 'yellow', header)
+    print('finished decoding headers')
+    print_colored_title(f'headers: received {len(headers)} headers', 'yellow',)
     return headers
 
 
 def handle_headers_msg(payload, peer, send):
     print_colored_title('Received headers message', 'red')
     headers = decode_headers_msg(payload)
-    print(len(headers))
-    return headers
+    # [TODO]
 
 def handle_single_command(command_data, peer, send):
     command, payload = command_data
