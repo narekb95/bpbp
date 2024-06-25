@@ -3,7 +3,7 @@ import struct
 import time
 from crypto import sha256d
 from random import SystemRandom as Rand
-from models.Header import Header
+from models.header import Header
 HEADER_LENGTH = 24
 
 # CompactSize Unsigned Integer

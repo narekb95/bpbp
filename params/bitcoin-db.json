@@ -10,6 +10,10 @@
                     "type": "INTEGER PRIMARY KEY"
                 },
                 {
+                    "name": "version",
+                    "type": "INTEGER NOT NULL"
+                },
+                {
                     "name": "height",
                     "type": "INTEGER NOT NULL"
                 },
