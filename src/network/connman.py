@@ -3,13 +3,13 @@ import socket
 import selectors
 
 class Connman:
-    def __init__(self, host, port, outbound_ips, max_inbound, on_connect, handle_command):
+    def __init__(self, host, port, outbound_ips, max_inbound, on_connect, handle_msg):
         self.max_inbound = max_inbound
         self.host = host
         self.port = port
         self.max_inbound = max_inbound
         self.on_connect = on_connect
-        self.handle_command = handle_command
+        self.handle_msg = handle_msg
         self.outbound_ips = outbound_ips
 
         self.sockets = []
@@ -61,7 +61,7 @@ class Connman:
     def recv_message(self, sock):
         output = b''
         output = sock.recv(1024)
-        self.handle_command(output, sock, self.send_message)
+        self.handle_msg(output, sock, self.send_message)
 
 
     def connect_to_ip(self, host):

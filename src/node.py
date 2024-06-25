@@ -66,7 +66,7 @@ class Node:
             outbound_ips,
             max_inbound,
             self.on_connect,
-            self.handle_command)
+            self.handle_message)
         
         self.connman_thread = Thread(target=self.connman.run)
 
@@ -80,7 +80,7 @@ class Node:
                     peer.awaiting_blocks = True
         
     
-    def handle_command(self, input, socket, send):
+    def handle_message(self, input, socket, send):
         peer = next(peer for peer in self.peers if peer.socket == socket)
         peer.raw_data += input
         while True:

@@ -153,7 +153,7 @@ def check_header_meets_target(header, nbits):
     return hash_int <= target
 
 def decode_block_header(data):
-    [version, previous_block_hash, merkle_root, timestamp, bits, nonce] = struct.unpack('<I32s32sIII', data)
+    [version, previous_block_hash, merkle_root, timestamp, bits, nonce] = struct.unpack('<I32s32sIII', data[:80])
     header = {
         'version': version,
         'previous_block_hash': previous_block_hash.hex(),
@@ -163,14 +163,16 @@ def decode_block_header(data):
         'nonce': nonce,
         'block_hash': sha256d(data[:80:-1]).hex()
     }
+    print_colored_title('header:', 'yellow', header)
     return header, data[81:]
     
 def decode_headers_msg(payload):
     headers = []
     count, payload = decode_var_int(payload)
+    print(f'Number of headers receieved: {count}')
     for _ in range(count):
         header, payload = decode_block_header(payload)
-        headers.append(decode_block_header(header))
+        headers.append(header)
     return headers
 
 
@@ -180,8 +182,8 @@ def handle_headers_msg(payload, peer, send):
     print(len(headers))
     return headers
 
-def handle_single_command(command, peer, send):
-    command, payload = command
+def handle_single_command(command_data, peer, send):
+    command, payload = command_data
     call = f'handle_{command}_msg'
     if call in globals():
         globals()[call](payload, peer, send)
