@@ -4,13 +4,13 @@ class DB:
     def __init__(self, db_data):
         self.db_man = SQLITE_DB(db_data)
     
-    def fetch_headers(self):
+    def fetch_all_headers(self):
         headers = self.db_man.find('headers',{})
         return headers
     
     def write_headers(self, headers):
         for header in headers:
-            ord.insert('headers', {
+            SQLITE_DB.insert('headers', {
                 'version': header.version,
                 'height': header.height,
                 'previous_hash': header.previous_hash,
