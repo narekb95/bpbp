@@ -5,6 +5,7 @@ from database.orm import DB
 import p2p.btc_prtocols as protocols
 from p2p.peer import Peer
 from network.connman import Connman
+from models.blockchain import Blockchain
 
 import json
 from sys import argv
@@ -44,6 +45,8 @@ def load_options(file):
 
 class Node:
     def __init__(self, param_file = None, db_file = None):
+
+        self.blockchain = Blockchain()
 
         if not param_file:
             raise NameError("No parameters file specified")
