@@ -46,18 +46,18 @@ def load_options(file):
 class Node:
     def __init__(self, param_file = None, db_file = None):
 
-        self.blockchain = Blockchain()
-
         if not param_file:
             raise NameError("No parameters file specified")
         if not db_file:
             raise NameError("No database file specified")
 
+        self.blockchain = Blockchain()
+
         db_data = load_json(db_file)
         self.db = DB(db_data)
-        
-        self.headers = self.db.fetch_all_headers()
-        self.header_hashes = [parse_hash(header['hash']) for header in self.headers]
+        self.blockchain.update_headers(self.db.fetch_all_headers())
+        print(self.blockchain)
+        exit()
 
         self.getHeaderMsg = protocols.create_getheaders_msg(self.header_hashes, self.header_hashes[0])
         self.peers = []
@@ -82,7 +82,7 @@ class Node:
                     self.connman.send_message(self.getHeaderMsg, peer.socket)
                     peer.awaiting_blocks = True
         
-    
+
     def handle_message(self, input, socket, send):
         peer = next(peer for peer in self.peers if peer.socket == socket)
         peer.raw_data += input
