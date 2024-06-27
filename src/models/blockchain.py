@@ -14,6 +14,6 @@ class Header:
 class Blockchain:
     def __init__(self, headers = None):
         if headers == None:
-            self.headers = []
+            self.headers = {}
         else:
             self.headers = headers
